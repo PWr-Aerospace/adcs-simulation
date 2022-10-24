@@ -1,0 +1,34 @@
+
+name: 📦 Package
+on:
+    pull_request:
+    push:
+        branches: ["main", "master", "develop", "release"]
+
+jobs:
+    package:
+        strategy:
+            matrix:
+                os: [ubuntu-latest, windows-latest, macos-latest]
+                python-version: ["3.8", "3.9", "3.10"]
+        name: 📦 Run package checks
+        runs-on: ${{ matrix.os }}
+        steps:
+            - name: Checkout repository code
+              uses: actions/checkout@v2
+            - name: Install Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v4
+              with:
+                  python-version: "${{ matrix.python-version }}"
+            - name: Install and configure Poetry
+              uses: snok/install-poetry@v1
+              with:
+                  version: 1.2.0
+                  virtualenvs-create: true
+                  virtualenvs-in-project: false
+                  installer-parallel: true
+            - name: Check package build
+              run: |
+                  pip install tox
+                  tox -e build
+
