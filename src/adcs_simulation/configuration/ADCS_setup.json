@@ -1,0 +1,45 @@
+{
+    "PlanetConst" : [
+        {
+            "R" : 6.371e6, 
+            "M" : 5.972e24,
+            "G" : 6.67e-11,
+            "Unit_info" : "m, kg, m^3/(kg*s^2)"
+        }
+    ],
+
+    "Satelite" : [
+        {
+            "mass" : 2,
+            "I" : [[0.9, 0, 0], [0, 0.9, 0], [0, 0, 0.3]],
+            "Unit_info" : "kg, kg*m^2"
+        }
+
+    ],
+
+    "Initial" : [
+        {
+            "EulerAngles" : [10, 20, 30],
+            "rotVelocity" : [0.01, 0, 0.01],
+            "Unit_info" : "deg, rad/s"
+        }
+    ],
+
+    "iterations" : [
+        {
+            "start" : 0,
+            "stop" : 1400,
+            "step" : 1,
+            "Unit_info" : "s"
+        }
+    ],
+
+    "magnetorquer" : [
+        {
+            "n" : 84,
+            "A" : 2,
+            "Unit_info" : "coils, cm^2"
+        }
+    ]
+
+}
