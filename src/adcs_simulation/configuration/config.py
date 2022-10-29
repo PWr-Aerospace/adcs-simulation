@@ -1,7 +1,4 @@
-"""
-Module that handles configuration of simulation.
-
-"""
+"""Module that handles configuration of simulation."""
 
 import json
 import os

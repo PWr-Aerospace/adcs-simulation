@@ -132,8 +132,7 @@ def initial_step(t0, config: Config, propagator: Propagator):
     return state_vector, quaternions, mag_field, pqr_table, sun_table
 
 
-def pqr_from_sun(sun_SB, sun_ECI, sun_table, agle):
-
+def pqr_from_sun(sun_SB, sun_ECI, sun_table, agle) -> TwojaStara:
     sun_step = {
         "X": sun_SB[0],
         "Y": sun_SB[1],
@@ -157,7 +156,7 @@ def pqr_from_sun(sun_SB, sun_ECI, sun_table, agle):
         dot_product = np.dot(u0, u1)
         cross_product = np.cross(u0, u1)
         cross_product = (
-            -1 * cross_product / np.linalg.norm(cross_product)
+                -1 * cross_product / np.linalg.norm(cross_product)
         )  # nie wiem czemu razy -1 ale dziala
         angle = np.arccos(np.clip(dot_product, -1.0, 1.0))
 
@@ -172,7 +171,6 @@ def pqr_from_sun(sun_SB, sun_ECI, sun_table, agle):
 
 
 def update_pqr(pqr_rk4, pqr_filt, pqr_sun, pqr_table):
-
     step_pqr = {
         "p": pqr_rk4[0],
         "q": pqr_rk4[1],
@@ -191,7 +189,6 @@ def update_pqr(pqr_rk4, pqr_filt, pqr_sun, pqr_table):
 
 
 def Euler_to_quaternion(phi, theta, psi) -> float:
-
     q0 = math.cos(phi / 2) * math.cos(theta / 2) * math.cos(psi / 2) + math.sin(
         phi / 2
     ) * math.sin(theta / 2) * math.sin(psi / 2)
@@ -211,7 +208,6 @@ def Euler_to_quaternion(phi, theta, psi) -> float:
 
 
 def NED_2_ECI(NED, xyz):
-
     rho = np.linalg.norm(xyz)
     x = xyz[0]
     y = xyz[1]
@@ -276,7 +272,6 @@ def polute_signal(b_SB, pqr):
 
 
 def filter_signal(B_poluted, pqr_poluted, mag_field, pqr_table):
-
     if all(mag_field[-1]) == 0:
         B_field_nav = B_poluted
         pqr_nav = pqr_poluted
@@ -325,15 +320,15 @@ def trans_dynamics(xyz, config: Config):
 
     rho = np.linalg.norm(xyz)
     rhat = xyz / rho
-    F_grav = -(G * M * m / rho**2) * rhat
+    force_grav = -(G * M * m / rho ** 2) * rhat
 
-    accel = F_grav / m
+    accel = force_grav / m
 
     return accel
 
 
 def k_function(
-    t, lla, quaternion, pqr, xyz, mag_field, pqr_table, config: Config, rewrite
+        t, lla, quaternion, pqr, xyz, mag_field, pqr_table, config: Config, rewrite
 ):
     quaternion_dot = quaternion_diff(pqr, quaternion)
     if t % 10 == 0:
