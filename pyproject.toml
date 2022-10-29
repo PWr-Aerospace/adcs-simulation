@@ -3,8 +3,8 @@ name = "adcs_simulation"
 version = "0.1.0"
 description = "Attitude Determination and Control System simulation for WroSat satellite project."
 authors = [
-    "Arek Drabik <arek.drabik1453@gmail.com>",
-    "Jan Bronicki <janbronicki@gmail.com>",
+  "Arek Drabik <arek.drabik1453@gmail.com>",
+  "Jan Bronicki <janbronicki@gmail.com>",
 ]
 
 [tool.poetry.dependencies]
