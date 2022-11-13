@@ -258,7 +258,7 @@ def pqr_from_sun(sun_sb: list, sun_eci: list, sun_table: pd.DataFrame):
         dot_product = np.dot(s_vector0, s_vector1)
         cross_product = np.cross(s_vector0, s_vector1)
         cross_product = (
-            -1 * cross_product / np.linalg.norm(cross_product)
+                -1 * cross_product / np.linalg.norm(cross_product)
         )  # nie wiem czemu razy -1 ale dziala
         angle = np.arccos(np.clip(dot_product, -1.0, 1.0))
 
@@ -555,15 +555,15 @@ def trans_dynamics(xyz, config: Config):
 
     rho = np.linalg.norm(xyz)
     rhat = xyz / rho
-    F_grav = -(G * M * m / rho**2) * rhat
+    force_grav = -(G * M * m / rho ** 2) * rhat
 
-    accel = F_grav / m
+    accel = force_grav / m
 
     return accel
 
 
 def k_function(
-    t, lla, quaternion, pqr, xyz, mag_field, pqr_table, config: Config, rewrite
+        t, lla, quaternion, pqr, xyz, mag_field, pqr_table, config: Config, rewrite
 ):
     quaternion_dot = quaternion_diff(pqr, quaternion)
     if t % 10 == 0:
