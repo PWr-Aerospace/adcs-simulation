@@ -15,38 +15,58 @@ from adcs_simulation.configuration.config import EXAMPLE_DATA_DIR
 from adcs_simulation.utils import read_tle
 
 
-def ECI_2_SB(ECI, quat):
-    q0 = quat[0]
-    q1 = quat[1]
-    q2 = quat[2]
-    q3 = quat[3]
+def eci_2_sb_transformation(eci, quat):
+    quat0 = quat[0]
+    quat1 = quat[1]
+    quat2 = quat[2]
+    quat3 = quat[3]
 
     rot_mat = np.array(
         [
             [
-                (q0**2 + q1**2 - q2**2 - q3**2),
-                2 * (q1 * q2 - q0 * q3),
-                2 * (q0 * q2 + q1 * q3),
+                (quat0**2 + quat1**2 - quat2**2 - quat3**2),
+                2 * (quat1 * quat2 - quat0 * quat3),
+                2 * (quat0 * quat2 + quat1 * quat3),
             ],
             [
-                2 * (q1 * q2 + q0 * q3),
-                (q0**2 - q1**2 + q2**2 - q3**2),
-                2 * (q2 * q3 - q0 * q1),
+                2 * (quat1 * quat2 + quat0 * quat3),
+                (quat0**2 - quat1**2 + quat2**2 - quat3**2),
+                2 * (quat2 * quat3 - quat0 * quat1),
             ],
             [
-                2 * (q1 * q3 - q0 * q2),
-                2 * (q0 * q1 + q2 * q3),
-                (q0**2 - q1**2 - q2**2 + q3**2),
+                2 * (quat1 * quat3 - quat0 * quat2),
+                2 * (quat0 * quat1 + quat2 * quat3),
+                (quat0**2 - quat1**2 - quat2**2 + quat3**2),
             ],
         ]
     )
     rot_mat = np.transpose(rot_mat)
-    SB = np.dot(rot_mat, ECI)
+    sb = np.dot(rot_mat, eci)
 
-    return SB
+    return sb
 
 
-def get_sunpos(t):
+def get_sunpos(t: skyfield.timelib.Timescale):
+    """
+    Calculates the position of the Sun relative to Earth in the
+    Earth Centered Inertial Frame.
+
+    Parameters
+    ----------
+    t - time given as Julian Date in form of skyfield Timescale object
+
+    Returns
+    -------
+    sunpos - list containing of 6 elements:
+                sunpos[0] - X coordinate of the Sun vector in ECI frame
+                sunpos[1] - Y coordinate of the Sun vector in ECI frame
+                sunpos[2] - Z coordinate of the Sun vector in ECI frame
+                sunpos[3] - right ascension -  angular distance of a
+                particular point measured eastward along the celestial
+                equator from the Sun at the March equinox, in radians
+                sunspos[4] - 
+
+    """
     t = t.tt
     t = t - 2451595
     rad = np.pi / 180
@@ -106,6 +126,40 @@ class Propagator:
         self._tle = read_tle(os.path.join(EXAMPLE_DATA_DIR, tle_file))
 
     def propagate(self, part_of_day, quaternion):
+        """
+        Performs calculations to obtain satellite position using SGP4 propagator
+
+        Using the previously loaded TLE text file initializes the satellite model
+        using skyfield library. The time given in form of Julian Date allows to
+        propagate the object position on orbit in the GCRS frame (Geocentric
+        Celestial Reference System - a type of Earth centered inertial coordinate
+        frame which is related to its center of mass) as well as its kinematic
+        parameters.
+        A transformation to LLA format (Latitude, Longitude, Attitude) is also
+        performed and the Sun vector (a vector pointing towards the Sun center)
+        computed.
+
+        Parameters
+        ----------
+        part_of_day - time from t0 given as 'part of day' to easy sum with JD
+        quaternion - a 4-element array describing 3D rotations. The given
+        quaternion gives the relation between the ECI frame (Earth Centered
+        Inertial, in this case GCRS frame) and satellite orientation
+        (Satellite Body Frame - SB). It can be used to obtain the rotation
+        matrix or directly rotate vector between these reference frames.
+
+        Returns
+        -------
+        pos_GCRS - object position in GCRS frame given in km.
+        v_GCRS - velocity vector in GCRS frame given in km/s.
+        lla - position given in LLA frame, attitude in km.
+        sun_ECI - Sun vector given in the ECI frame. If the object is in
+        Earths shadow returned as [0, 0, 0].
+        sun_SB - Sun vector given in the SB frame. The transformation was
+        obtained from sun_ECI using the given quaternion. If the object
+        is in Earths shadow returned as [0, 0, 0].
+
+        """
         satellite = skyfield.EarthSatellite(
             self._tle.first_line, self._tle.second_line
         )  # initialize TLE
@@ -139,10 +193,10 @@ class Propagator:
         if sunlight:
             sunposition = get_sunpos(julian_date)
             sun_ECI = [sunposition[0], sunposition[1], sunposition[2]]
-            sun_SB = ECI_2_SB(sun_ECI, quaternion)
+            sun_SB = eci_2_sb_transformation(sun_ECI, quaternion)
 
         else:
             sun_SB = [0, 0, 0]
             sun_ECI = [0, 0, 0]
 
-        return pos_GCRS, v_GCRS, lla, sun_SB, sun_ECI
+        return pos_GCRS, v_GCRS, lla,sun_ECI, sun_SB

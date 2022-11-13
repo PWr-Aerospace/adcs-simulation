@@ -53,21 +53,21 @@ class Config:
     @property
     def torquer_params(self) -> tuple:
         n = self._setup["magnetorquer"][0]["n"]
-        A = self._setup["magnetorquer"][0]["A"]
+        area = self._setup["magnetorquer"][0]["A"]
 
-        return n, A
+        return n, area
 
     @property
     def sat_params(self) -> tuple:
-        I = self._setup["Satelite"][0]["I"]
+        inertia = self._setup["Satelite"][0]["I"]
         m = self._setup["Satelite"][0]["mass"]
 
-        return I, m
+        return inertia, m
 
     @property
     def planet_data(self) -> tuple:
-        G = self._setup["PlanetConst"][0]["G"]
-        M = self._setup["PlanetConst"][0]["M"]
-        R = self._setup["PlanetConst"][0]["R"]
+        gravity_const = self._setup["PlanetConst"][0]["G"]
+        earth_mass = self._setup["PlanetConst"][0]["M"]
+        earth_radius = self._setup["PlanetConst"][0]["R"]
 
-        return G, M, R
+        return gravity_const, earth_mass, earth_radius
