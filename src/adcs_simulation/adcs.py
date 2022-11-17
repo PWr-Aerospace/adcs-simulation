@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from adcs_simulation.configuration.config import Config
-from adcs_simulation.propagator import eci_2_sb_transformation, Propagator
+from adcs_simulation.propagator import Propagator, eci_2_sb_transformation
 from adcs_simulation.visualization import visualize
 
 
@@ -20,6 +20,7 @@ class Result:
     """
     Class responsible for parsing results
     """
+
     pqr_table: pd.DataFrame
     state_vector: pd.DataFrame
     sun_table: pd.Series
@@ -68,7 +69,7 @@ def simulate(cfg: Config, propagator: Propagator) -> Result:
     )
     angle = {"phi": 0, "theta": 0, "psi": 0}
     angle = pd.DataFrame(data=angle, index=[0])
-    #TODO: angle was a variable for debug, check what it is and if its necessary
+    # TODO: angle was a variable for debug, check what it is and if its necessary
 
     for delta_t in np.arange(tzero + 1, tend, tstep):
         print("Timestep {delta_t}")
@@ -136,6 +137,7 @@ def initial_step(tzero: int, config: Config, propagator: Propagator):
     sun_table - data frame with sun vector in ECI and SB frames
     mag_field - data frame with magnetic field values, similarly to the
         pqr values one measured and one filtered. Both ale in ECI frame.
+    quaternions : list - a list where previous quaternions are stored
 
     """
 
@@ -258,7 +260,7 @@ def pqr_from_sun(sun_sb: list, sun_eci: list, sun_table: pd.DataFrame):
         dot_product = np.dot(s_vector0, s_vector1)
         cross_product = np.cross(s_vector0, s_vector1)
         cross_product = (
-                -1 * cross_product / np.linalg.norm(cross_product)
+            -1 * cross_product / np.linalg.norm(cross_product)
         )  # nie wiem czemu razy -1 ale dziala
         angle = np.arccos(np.clip(dot_product, -1.0, 1.0))
 
@@ -272,8 +274,9 @@ def pqr_from_sun(sun_sb: list, sun_eci: list, sun_table: pd.DataFrame):
     return pqr, sun_table, angle
 
 
-def update_pqr(pqr_rk4: np.array, pqr_filt: np.array,
-                 pqr_sun: list, pqr_table: pd.DataFrame) -> pd.DataFrame:
+def update_pqr(
+    pqr_rk4: np.array, pqr_filt: np.array, pqr_sun: list, pqr_table: pd.DataFrame
+) -> pd.DataFrame:
     """
     Update the sun_table data frame by calculated in the current step values
     of different rotational velocities.
@@ -339,17 +342,20 @@ def euler_to_quaternion(phi: float, theta: float, psi: float) -> list[float]:
         where alfa is the angle of rotation around the given axis.
     """
 
-    #TODO: check the input angles (radians or degrees)
-
+    # TODO: check the input angles (radians or degrees)
 
     qat0 = math.cos(phi / 2) * math.cos(theta / 2) * math.cos(psi / 2) + math.sin(
-        phi / 2) * math.sin(theta / 2) * math.sin(psi / 2)
+        phi / 2
+    ) * math.sin(theta / 2) * math.sin(psi / 2)
     qat1 = math.sin(phi / 2) * math.cos(theta / 2) * math.cos(psi / 2) - math.cos(
-        phi / 2) * math.sin(theta / 2) * math.sin(psi / 2)
+        phi / 2
+    ) * math.sin(theta / 2) * math.sin(psi / 2)
     qat2 = math.cos(phi / 2) * math.sin(theta / 2) * math.cos(psi / 2) + math.sin(
-        phi / 2) * math.cos(theta / 2) * math.sin(psi / 2)
+        phi / 2
+    ) * math.cos(theta / 2) * math.sin(psi / 2)
     qat3 = math.cos(phi / 2) * math.cos(theta / 2) * math.sin(psi / 2) - math.sin(
-        phi / 2) * math.sin(theta / 2) * math.cos(psi / 2)
+        phi / 2
+    ) * math.sin(theta / 2) * math.cos(psi / 2)
 
     qauternion = [qat0, qat1, qat2, qat3]
 
@@ -375,26 +381,34 @@ def ned_2_eci_transformation(ned: list, xyz: np.array) -> np.array:
     the computed rotation matrix and input vector
     """
 
-    #TODO rewrite using scipy rotation library
+    # TODO rewrite using scipy rotation library
     rho = np.linalg.norm(xyz)
-    x = xyz[0]
-    y = xyz[1]
-    z = xyz[2]
+    x_coord = xyz[0]
+    y_coord = xyz[1]
+    z_coord = xyz[2]
 
-    phiE = 0
-    thetaE = np.arccos(z / rho) + np.pi
-    psiE = np.arctan2(y, x)
+    phi_e = 0
+    theta_e = np.arccos(z_coord / rho) + np.pi
+    psi_e = np.arctan2(y_coord, x_coord)
 
-    cost = np.cos(thetaE)
-    sint = np.sin(thetaE)
-    sinp = np.sin(phiE)
-    cosp = np.cos(phiE)
-    sins = np.sin(psiE)
-    coss = np.cos(psiE)
+    cost = np.cos(theta_e)
+    sint = np.sin(theta_e)
+    sinp = np.sin(phi_e)
+    cosp = np.cos(phi_e)
+    sins = np.sin(psi_e)
+    coss = np.cos(psi_e)
 
     rot_mat = [
-        [cost * coss, sinp * sint * coss - cosp * sins, cosp * sint * coss + sinp * sins],
-        [cost * sins, sinp * sint * sins + cosp * coss, cosp * sint * sins - sinp * coss],
+        [
+            cost * coss,
+            sinp * sint * coss - cosp * sins,
+            cosp * sint * coss + sinp * sins,
+        ],
+        [
+            cost * sins,
+            sinp * sint * sins + cosp * coss,
+            cosp * sint * sins - sinp * coss,
+        ],
         [-sint, sinp * cost, cosp * cost],
     ]
     eci = np.dot(rot_mat, ned)
@@ -418,6 +432,7 @@ def quaternion_diff(pqr: np.array, quaternion: list[float]):
     -------
     quaternion_dot : np.array - differential quaternion
     """
+
     p = pqr[0]
     q = pqr[1]
     r = pqr[2]
@@ -431,7 +446,7 @@ def quaternion_diff(pqr: np.array, quaternion: list[float]):
     return quaternion_dot
 
 
-def polute_signal(b_sb: np.array, pqr: np.array) -> np.array:
+def pollute_signal(b_sb: np.array, pqr: np.array) -> np.array:
     """
     Short function to pollute the magnetic field and rotation velocity
     calculation to imitate real measurements.
@@ -450,7 +465,7 @@ def polute_signal(b_sb: np.array, pqr: np.array) -> np.array:
         and noise
     """
 
-    #TODO: random values from -1 to 1? why 0 to 1 * 2 used?
+    # TODO: random values from -1 to 1? why 0 to 1 * 2 used?
     # Bias and Noise
     magscale_bias = 4e-7  # T
     mag_field_bias = magscale_bias * (2 * np.random.rand())  # (0 to 1)
@@ -462,20 +477,24 @@ def polute_signal(b_sb: np.array, pqr: np.array) -> np.array:
     ang_field_bias = angscale_bias * (2 * np.random.rand())  # (0 to 1)
 
     angscale_noise = 0.001  # rad/s
-    AngFieldNoise = angscale_noise * (2 * np.random.rand())  # (0 to 1)
+    ang_field_noise = angscale_noise * (2 * np.random.rand())  # (0 to 1)
 
     polluted_pqr = np.zeros(3)
-    polluted_b_SB = np.zeros(3)
+    polluted_b_sb = np.zeros(3)
 
     for x in range(3):
-        polluted_b_SB[x] = b_sb[x] + mag_field_bias + mag_field_noise
-        polluted_pqr[x] = pqr[x] + ang_field_bias + AngFieldNoise
+        polluted_b_sb[x] = b_sb[x] + mag_field_bias + mag_field_noise
+        polluted_pqr[x] = pqr[x] + ang_field_bias + ang_field_noise
 
-    return np.array(polluted_b_SB), np.array(polluted_pqr)
+    return np.array(polluted_b_sb), np.array(polluted_pqr)
 
 
-def filter_signal(b_poluted: np.array, pqr_poluted: np.array,
-            mag_field: pd.DataFrame, pqr_table: pd.DataFrame) -> np.array:
+def filter_signal(
+    b_poluted: np.array,
+    pqr_poluted: np.array,
+    mag_field: pd.DataFrame,
+    pqr_table: pd.DataFrame,
+) -> np.array:
     """
     Simple filter for the polluted data.
 
@@ -507,91 +526,193 @@ def filter_signal(b_poluted: np.array, pqr_poluted: np.array,
     pqr_nav : np.array - array with the filtered (navigation)
         rotation velocity
     """
+
     if all(mag_field[-1]) == 0:
         b_field_nav = b_poluted
         pqr_nav = pqr_poluted
     else:
-        B_prev = np.array(mag_field[-1][3:])
+        b_prev = np.array(mag_field[-1][3:])
         pqr_prev = np.array(pqr_table[-1][3:6])
 
         s = 0.3
 
-        BiasEstimate = [0, 0, 0]
-        b_field_nav = B_prev * (1 - s) + s * (b_poluted - BiasEstimate)
-        pqrBiasEstimate = [0, 0, 0]
-        pqr_nav = pqr_prev * (1 - s) + s * (pqr_poluted - pqrBiasEstimate)
+        bias_estimate = [0, 0, 0]
+        b_field_nav = b_prev * (1 - s) + s * (b_poluted - bias_estimate)
+        pqr_bias_estimate = [0, 0, 0]
+        pqr_nav = pqr_prev * (1 - s) + s * (pqr_poluted - pqr_bias_estimate)
 
     return b_field_nav, pqr_nav
 
 
-def magnetorquer(b_sb_filt, pqr_filt, config: Config):
-    n, area = config.torquer_params
+def magnetorquer(b_sb_filt: np.array, pqr_filt: np.array, config: Config):
+    """
+    Magnetotorquer model. Calculates current and magnetic induction of the solenoid.
+
+    An ADCS module consists of three solenoids for every axis of rotation to
+    perform a three-axis control.
+
+    Parameters
+    ----------
+    b_sb_filt : np.array - filtered magnetic field in SB (Satellite Body) frame.
+    pqr_filt : np.array - filtered rotation velocity of the satellite.
+    config : Config - initial parameters from setup.json. In this situation
+        required for solenoid parameters
+
+    Returns
+    -------
+    current : np.array - calculated current required on the solenoids for every
+        axis of rotation
+    mu_b : float - magnetic induction generated on every of the three solenoids.
+    """
+
+    # TODO check the physics
+    n_coils, area = config.torquer_params
     k = 67200
-    current = k * np.cross(pqr_filt, b_sb_filt) / (n * area)
+    current = k * np.cross(pqr_filt, b_sb_filt) / (n_coils * area)
 
     # Add in saturation
     if np.abs(np.max(current)) > 0.04:
         current = current / np.linalg.norm(current) * 0.04
-    mu_b = current * n * area
+    mu_b = current * n_coils * area
 
     return current, mu_b
 
 
-def rot_dynamics(muB, B_SB, pqr, config: Config):
-    I, _ = config.sat_params
+def rot_dynamics(
+    mu_b: np.array, b_sb: np.array, pqr: np.array, config: Config
+) -> np.array:
+    """
+    Perform rotation dynamic calculations.
 
-    torquer_model = np.dot(muB, B_SB)
-    H = np.dot(I, pqr)
-    invI = np.linalg.inv(np.array(I))
+    The desired magnetic induction on every solenoid is calculated using the
+    magnetorquer model and assuming that the goal is to slow the satellite
+    rotation down to zero (no other control variants are implemented yet).
+    The calculated in this way magnetic induction in the Earth Magnetic field
+    allows to obtain the electromagnetic force and rotation velocity
+    derivative
+
+    Parameters
+    ----------
+    mu_b : np.array - magnetic induction generated on every of the three solenoids.
+    b_sb : np.array - filtered magnetic field in SB (Satellite Body) frame.
+    pqr : np.array - filtered rotation velocity of the satellite.
+    config : Config- initial parameters from setup.json. In this situation
+        required for satellite parameters
+
+    Returns
+    -------
+    pqr_dot : np.array - rotation velocity derivative for this time step
+    """
+
+    inertia, stellite_mass = config.sat_params
+
+    torquer_model = np.dot(mu_b, b_sb)
+    ang_momentum = np.dot(inertia, pqr)
+    inv_inertia = np.linalg.inv(np.array(inertia))
     pqr = np.array(pqr)
 
-    pqr_dot = np.dot(np.array(invI), (torquer_model - np.cross(pqr, H)))
+    pqr_dot = np.dot(
+        np.array(inv_inertia), (torquer_model - np.cross(pqr, ang_momentum))
+    )
+
     return pqr_dot
 
 
-def trans_dynamics(xyz, config: Config):
-    I, m = config.sat_params
-    G, M, R = config.planet_data
+# def trans_dynamics(xyz: list, config: Config):
+#     inertia, satellite_mass = config.sat_params
+#     gravity_const, earth_mass, earth_radius = config.planet_data
 
-    rho = np.linalg.norm(xyz)
-    rhat = xyz / rho
-    force_grav = -(G * M * m / rho ** 2) * rhat
+#     rho = np.linalg.norm(xyz)
+#     rhat = xyz / rho
+#     force_grav = -(gravity_const * earth_mass * satellite_mass / rho ** 2) * rhat
 
-    accel = force_grav / m
+#     accel = force_grav / satellite_mass
 
-    return accel
+#     return accel
 
 
 def k_function(
-        t, lla, quaternion, pqr, xyz, mag_field, pqr_table, config: Config, rewrite
+    time: int,
+    lla: list,
+    quaternion: list,
+    pqr: np.array,
+    xyz: np.array,
+    mag_field: pd.DataFrame,
+    pqr_table: pd.DataFrame,
+    config: Config,
+    rewrite: bool,
 ):
+    """
+    Runge-Kutta Method partial function. Computes values of the chosen
+    parameters. For explanation of the method see rk4 function.
+
+    The main goal is to calculate derivatives for quaternion and rotation
+    velocity. As to obtain rotation velocity the magnetic field is needed
+    every 10 time steps, when dt = 1 an update is calculated using the
+    IGRF model. In other situations the magnetic field value is taken from
+    the last updated step.
+
+    Parameters
+    ----------
+    t : int - time from simulation start in seconds
+    lla : list - position in LLA frame: latitude, longitude, altitude (in km)
+    quaternion : list - a 4-element array describing 3D rotations. The given
+        quaternion gives the relation between the ECI frame (Earth Centered
+        Inertial, in this case GCRS frame) and satellite orientation
+        (Satellite Body Frame - SB). It can be used to obtain the rotation
+        matrix or directly rotate vector between these reference frames.
+    pqr : np.array - array whit the current rotation velocity of the object
+        in radians in SB (Satellite Body) frame
+    xyz : np.array - X, Y and Z coordinates of the object given as a
+        vector in ECI frame
+    mag_field : pd.DataFrame - data frame with different types of magnetic
+        field values
+    pqr_table : pd.DataFrame - data frame containing rotation velocities
+        of the satellite. Two based on magnetic field, measured (with bias),
+        filtered (utilizing a simple filter algorithm) and one computed from
+        the Sun vector change.
+    config : Config - initial parameters from setup.json
+    rewrite : bool - secondary check if the calculated values should be saved
+
+    Returns
+    -------
+    mag_field : pd.DataFrame - data frame with different types of magnetic
+        field values. Eventually updated
+    pqr_table : pd.DataFrame - data frame containing rotation velocities
+        of the satellite. Two based on magnetic field, measured (with bias),
+        filtered (utilizing a simple filter algorithm) and one computed from
+        the Sun vector change. Eventually updated.
+    dstat_dt : np.array - array with derivatives for quaternion and rotation
+        velocity calculated in this step
+    """
+
     quaternion_dot = quaternion_diff(pqr, quaternion)
-    if t % 10 == 0:
+    if time % 10 == 0:
         mag = igrf.igrf(
             "2020-01-01", glat=lla[0].degrees, glon=lla[1].degrees, alt_km=lla[2]
         )
 
-        B_NED = [mag["north"][0], mag["east"][0], mag["down"][0]]
-        B_ECI = ned_2_eci_transformation(B_NED, xyz)
-        b_SB = eci_2_sb_transformation(B_ECI, quaternion)
-        b_SB = b_SB * 1e-9
+        b_ned = [mag["north"][0], mag["east"][0], mag["down"][0]]
+        b_eci = ned_2_eci_transformation(b_ned, xyz)
+        b_sb = eci_2_sb_transformation(b_eci, quaternion)
+        b_sb = b_sb * 1e-9
     else:
-        b_SB = mag_field.values[-1][:3]
+        b_sb = mag_field.values[-1][:3]
 
-    if t % 10 == 0 and rewrite == True:
-        B_SB_Measured, pqr_measured = polute_signal(b_SB, pqr)
-        B_SB_filt, pqr_filt = filter_signal(
-            B_SB_Measured, pqr_measured, mag_field.values, pqr_table.values
+    if time % 10 == 0 and rewrite is True:
+        b_sb_measured, pqr_measured = pollute_signal(b_sb, pqr)
+        b_sb_filt, pqr_filt = filter_signal(
+            b_sb_measured, pqr_measured, mag_field.values, pqr_table.values
         )
-        B_step = {
-            "B_x": b_SB[0],
-            "B_y": b_SB[1],
-            "B_z": b_SB[2],
-            "B_x_filt": B_SB_filt[0],
-            "B_y_filt": B_SB_filt[1],
-            "B_z_filt": B_SB_filt[2],
+        b_step = {
+            "B_x": b_sb[0],
+            "B_y": b_sb[1],
+            "B_z": b_sb[2],
+            "B_x_filt": b_sb_filt[0],
+            "B_y_filt": b_sb_filt[1],
+            "B_z_filt": b_sb_filt[2],
         }
-        df2 = pd.DataFrame(data=B_step, index=[0])
+        df2 = pd.DataFrame(data=b_step, index=[0])
         mag_field = pd.concat([mag_field, df2])
 
         pqr_step = {
@@ -605,18 +726,18 @@ def k_function(
         df2 = pd.DataFrame(data=pqr_step, index=[0])
         pqr_table = pd.concat([pqr_table, df2])
 
-    elif t % 10 != 0 and rewrite == True:
-        B_SB_filt = mag_field.values[-1][3:6]
+    elif time % 10 != 0 and rewrite is True:
+        b_sb_filt = mag_field.values[-1][3:6]
         pqr_filt = pqr_table.values[-1][3:6]
-        B_step = {
-            "B_x": b_SB[0],
-            "B_y": b_SB[1],
-            "B_z": b_SB[2],
-            "B_x_filt": B_SB_filt[0],
-            "B_y_filt": B_SB_filt[1],
-            "B_z_filt": B_SB_filt[2],
+        b_step = {
+            "B_x": b_sb[0],
+            "B_y": b_sb[1],
+            "B_z": b_sb[2],
+            "B_x_filt": b_sb_filt[0],
+            "B_y_filt": b_sb_filt[1],
+            "B_z_filt": b_sb_filt[2],
         }
-        df2 = pd.DataFrame(data=B_step, index=[0])
+        df2 = pd.DataFrame(data=b_step, index=[0])
         mag_field = pd.concat([mag_field, df2])
         pqr_step = {
             "p": pqr[0],
@@ -629,15 +750,15 @@ def k_function(
         df2 = pd.DataFrame(data=pqr_step, index=[0])
         pqr_table = pd.concat([pqr_table, df2])
     else:
-        B_SB_filt = mag_field.values[-1][3:6]
+        b_sb_filt = mag_field.values[-1][3:6]
         pqr_filt = pqr_table.values[-1][3:6]
-        B_step = {
-            "B_x": b_SB[0],
-            "B_y": b_SB[1],
-            "B_z": b_SB[2],
-            "B_x_filt": B_SB_filt[0],
-            "B_y_filt": B_SB_filt[1],
-            "B_z_filt": B_SB_filt[2],
+        b_step = {
+            "B_x": b_sb[0],
+            "B_y": b_sb[1],
+            "B_z": b_sb[2],
+            "B_x_filt": b_sb_filt[0],
+            "B_y_filt": b_sb_filt[1],
+            "B_z_filt": b_sb_filt[2],
         }
         pqr_step = {
             "p": pqr[0],
@@ -648,10 +769,10 @@ def k_function(
             "r_filt": pqr_filt[2],
         }
 
-    current, muB = magnetorquer(B_SB_filt, pqr_filt, config)
-    pqr_dot = rot_dynamics(muB, b_SB, pqr, config)
+    current, mu_b = magnetorquer(b_sb_filt, pqr_filt, config)
+    pqr_dot = rot_dynamics(mu_b, b_sb, pqr, config)
 
-    dstatdt = np.array(
+    dstat_dt = np.array(
         [
             quaternion_dot[0],
             quaternion_dot[1],
@@ -663,24 +784,84 @@ def k_function(
         ]
     )
 
-    return dstatdt, mag_field, pqr_filt
+    return dstat_dt, mag_field, pqr_filt
 
 
-def rk4(t, lla, state_vector, quaternion, mag_field, pqr_table, config: Config):
-    t0, tend, tstep = config.iterations_info
+def rk4(
+    time: int,
+    lla: list,
+    state_vector: pd.DataFrame,
+    quaternion: list,
+    mag_field: pd.DataFrame,
+    pqr_table: pd.DataFrame,
+    config: Config,
+):
+    """
+    Runge-Kutte method is iterative an algorithm to obtain approximate
+    solutions for differential equations.
+
+    The common RK4 method is based on four partial functions. If we have an
+    equation where dy/dt = f(t,y), assume a time step of Δt = 1 and have
+    the solution on time n then we can approximate the function
+    for time n + 1:
+        yn+1 = yn + 1/6(k1 + 2*k2 + 2*k3 + k4)*Δt
+
+        where:
+        tn = t + Δt
+        k1 = f(tn, yn) - this is the initial value
+        k2 = f(tn + Δt/2, yn + Δt*k1/2)
+        k3 = f(tn + Δt/2, yn + Δt*k2/2)
+        k4 = f(tn + Δt, yn + Δt*k3)
+
+    Parameters
+    ----------
+    t : int - time from simulation start in seconds
+    lla : list - position in LLA frame: latitude, longitude, altitude (in km)
+        quaternion : list - a 4-element array describing 3D rotations. The given
+        quaternion gives the relation between the ECI frame (Earth Centered
+        Inertial, in this case GCRS frame) and satellite orientation
+        (Satellite Body Frame - SB). It can be used to obtain the rotation
+    state_vector : pd.DataFrame - data frame with summary information about
+        the satellite, contains position, linear and rotation
+    quaternion : list - a 4-element array describing 3D rotations. The given
+        quaternion gives the relation between the ECI frame (Earth Centered
+        Inertial, in this case GCRS frame) and satellite orientation
+        (Satellite Body Frame - SB). It can be used to obtain the rotation
+        matrix or directly rotate vector between these reference frames.
+    mag_field : pd.DataFrame - data frame with different types of magnetic
+        field values
+    pqr_table : pd.DataFrame - data frame containing rotation velocities
+        of the satellite. Two based on magnetic field, measured (with bias),
+        filtered (utilizing a simple filter algorithm) and one computed from
+        the Sun vector change.
+    config : Config - initial parameters from setup.json
+
+    Returns
+    -------
+    mag_field : pd.DataFrame - data frame with different types of magnetic
+        field values. Eventually updated
+    pqr_table : pd.DataFrame - data frame containing rotation velocities
+        of the satellite. Two based on magnetic field, measured (with bias),
+        filtered (utilizing a simple filter algorithm) and one computed from
+        the Sun vector change. Eventually updated.
+    pqr1 : np.array - rotation velocity estimated using the RK4 method
+    quaternion1 : list - quaternion estimated using RK4 method
+    """
+
+    time0, tend, tstep = config.iterations_info
 
     pqr = np.array([state_vector[6], state_vector[7], state_vector[8]])
     xyz = np.array([state_vector[0], state_vector[1], state_vector[2]])
     v_xyz = np.array([state_vector[3], state_vector[4], state_vector[5]])
     k1, mag_field, pqr_filt = np.array(
         k_function(
-            t, lla, quaternion, pqr, xyz, mag_field, pqr_table, config, rewrite=True
+            time, lla, quaternion, pqr, xyz, mag_field, pqr_table, config, rewrite=True
         ),
         dtype=object,
     )
     k2, mag_field, temp = np.array(
         k_function(
-            t + tstep / 2,
+            time + tstep / 2,
             lla,
             quaternion + k1[0:4] * tstep / 2,
             pqr + k1[4:7] * tstep / 2,
@@ -694,7 +875,7 @@ def rk4(t, lla, state_vector, quaternion, mag_field, pqr_table, config: Config):
     )
     k3, mag_field, temp = np.array(
         k_function(
-            t + tstep / 2,
+            time + tstep / 2,
             lla,
             quaternion + k2[0:4] * tstep / 2,
             pqr + k2[4:7] * tstep / 2,
@@ -708,7 +889,7 @@ def rk4(t, lla, state_vector, quaternion, mag_field, pqr_table, config: Config):
     )
     k4, mag_field, temp = np.array(
         k_function(
-            t + tstep,
+            time + tstep,
             lla,
             quaternion + k3[0:4] * tstep,
             pqr + k3[4:7] * tstep,
@@ -728,14 +909,47 @@ def rk4(t, lla, state_vector, quaternion, mag_field, pqr_table, config: Config):
     return pqr1, quaternion1, mag_field, pqr_filt
 
 
-def update_data(state_vector, pos_GCRS, v_GCRS, lla, pqr_rk4, quaternions, quaternion):
+def update_data(
+    state_vector: list,
+    pos_gcrs: np.ndarray,
+    v_gcrs: np.array,
+    lla: list,
+    pqr_rk4: np.array,
+    quaternions: list,
+    quaternion: list,
+):
+    """
+    Update the main tables that save revelant data for the time step.
+
+    Parameters
+    ----------
+    state_vector : pd.DataFrame - data frame with summary information about
+        the satellite, contains position, linear and rotation
+    pos_gcrs - object position in GCRS frame given in km.
+    v_gcrs - velocity vector in GCRS frame given in km/s.
+    lla - position given in LLA frame, attitude in km.
+    pqr_rk4 : np.array - rotation velocity estimated using the RK4 method
+    quaternions : list - a list where previous quaternions are stored
+    quaternion : list - a 4-element array describing 3D rotations. The given
+        quaternion gives the relation between the ECI frame (Earth Centered
+        Inertial, in this case GCRS frame) and satellite orientation
+        (Satellite Body Frame - SB). It can be used to obtain the rotation
+        matrix or directly rotate vector between these reference frames.
+
+    Returns
+    -------
+    quaternions : list - updated list where previous quaternions are stored
+        state_vector : pd.DataFrame - data frame with summary information about
+        the satellite, contains position, linear and rotation, updated
+    """
+
     col = {
-        "x km": pos_GCRS[0],
-        "y km": pos_GCRS[1],
-        "z km": pos_GCRS[2],
-        "dx/dt km/s": v_GCRS[0],
-        "dy/dt km/s": v_GCRS[1],
-        "dz/dt km/s": v_GCRS[2],
+        "x km": pos_gcrs[0],
+        "y km": pos_gcrs[1],
+        "z km": pos_gcrs[2],
+        "dx/dt km/s": v_gcrs[0],
+        "dy/dt km/s": v_gcrs[1],
+        "dz/dt km/s": v_gcrs[2],
         "p rad/s": pqr_rk4[0],
         "q rad/s": pqr_rk4[1],
         "r rad/s": pqr_rk4[2],
@@ -751,11 +965,15 @@ def update_data(state_vector, pos_GCRS, v_GCRS, lla, pqr_rk4, quaternions, quate
 
 
 def main():
+    """
+    Main function for the simulation
+    """
+
     cfg = Config("ADCS_setup.json")
     propagator = Propagator("tle.txt")
     result = simulate(cfg, propagator)
-    G, M, R = cfg.planet_data
-    visualize(result, R)
+    gravity_const, earth_mass, earth_radius = cfg.planet_data
+    visualize(result, earth_radius)
 
 
 if __name__ == "__main__":

@@ -9,6 +9,10 @@ from dataclasses import dataclass
 
 @dataclass
 class TLE:
+    """
+    Class dedicated to read given two-line-element (TLE)
+    """
+
     first_line: str
     second_line: str
 
@@ -36,6 +40,15 @@ class TLE:
 
 
 def _convert_tle_year(tle: TLE) -> None:
+    """
+    Check the year written in TLE file.
+
+    Parameters
+    ----------
+    tle : TLE - two-line-element for the satellite
+
+    """
+
     if 57 <= tle.year <= 99:
         tle.year += 1900
     elif 0 <= tle.year <= 56:
@@ -45,6 +58,18 @@ def _convert_tle_year(tle: TLE) -> None:
 
 
 def read_tle(tle_file: str) -> TLE:
+    """
+    Read the TLE from txt file.
+
+    Parameters
+    ----------
+    tle_file : str - TLE file name
+
+    Returns
+    -------
+    TLE
+    """
+
     with open(tle_file) as file:
         tle = file.read()
     tle_lines = tle.split(sep="\n")
@@ -59,7 +84,7 @@ def read_tle(tle_file: str) -> TLE:
         international_designator=tle[2],
         year=int(tle[3][0:2]),
         day=tle[3][2:5],
-        epoch="0{}".format(tle[3][5:]),
+        epoch="0{tle[3][5:]}",
         first_mean_motion=tle[4],
         second_mean_motion=tle[5][:-2],
         second_mean_motion_exp=tle[5][-2:],

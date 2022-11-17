@@ -10,7 +10,22 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def visualize(result: Any, R: float):
+def visualize(result: Any, radius: float):
+    """
+    Function dedicated to plot the most important parameters
+
+    Created plots:
+        - 3D plot of the orbit in ECEF (Earth Centered Earth Fixed) frame.
+        - Rotation velocity calculated from magnetic field.
+        - Rotation velocity calculated from Sun vector.
+        - Measured magnetic field.
+
+    Parameters
+    ----------
+    results
+    radius : float - Earth
+    """
+
     sun_table = result.sun_table
     angle = result.angle
     state_vector = result.state_vector
@@ -26,18 +41,18 @@ def visualize(result: Any, R: float):
     os.mkdir("../../plots")
 
     fig = plt.figure()
-    ax = fig.gca(projection="3d")
-    ax.set_aspect("auto")
+    axis = fig.gca(projection="3d")
+    axis.set_aspect("auto")
     # draw sphere
     u, v = np.mgrid[0 : 2 * np.pi : 40j, 0 : np.pi : 20j]
-    x = np.cos(u) * np.sin(v) * R / 1000
-    y = np.sin(u) * np.sin(v) * R / 1000
-    z = np.cos(v) * R / 1000
+    x_coordinate = np.cos(u) * np.sin(v) * radius / 1000
+    y_coordinate = np.sin(u) * np.sin(v) * radius / 1000
+    z_coordinate = np.cos(v) * radius / 1000
 
-    ax.title("Orbit ECEF")
+    axis.title("Orbit ECEF")
     # ax.plot_surface(x, y, z, cmap=plt.cm.YlGnBu_r)
-    ax.plot_wireframe(x, y, z, color="g")
-    ax.scatter(
+    axis.plot_wireframe(x_coordinate, y_coordinate, z_coordinate, color="g")
+    axis.scatter(
         state_vector["x km"],
         state_vector["y km"],
         state_vector["z km"],
@@ -61,7 +76,7 @@ def visualize(result: Any, R: float):
     plt.show()
     plt.close()
 
-    plt.title("Satliette body rotation (magnetic field)")
+    plt.title("Satellite body rotation (magnetic field)")
     plt.grid()
     plt.plot(range(len(state_vector["x km"])), pqr_table["p"], label="p")
     plt.plot(range(len(state_vector["x km"])), pqr_table["q"], label="q")
