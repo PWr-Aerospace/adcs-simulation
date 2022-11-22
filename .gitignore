@@ -55,6 +55,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+*junit*
 
 # Translations
 *.mo
@@ -75,6 +76,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/autogen/
 
 # PyBuilder
 .pybuilder/
